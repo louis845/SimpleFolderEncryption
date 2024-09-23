@@ -53,6 +53,13 @@ if [ -d "$OUTPUT_FOLDER_PATH" ]; then
     exit 1
 fi
 
+# Get parent folder of output folder path, and validate it exists
+OUTPUT_PARENT_FOLDER=$(dirname "$OUTPUT_FOLDER_PATH")
+if [ ! -d "$OUTPUT_PARENT_FOLDER" ]; then
+    echo "Error: Output parent folder does not exist."
+    exit 1
+fi
+
 # Read the password
 if [ -z "$PASSWORD_FD" ]; then
     echo "Please enter the password: "
@@ -69,8 +76,7 @@ if [[ "$CHECKSUM" != "$CALCULATED_CHECKSUM" ]]; then
     exit 2
 fi
 
-mkdir -p "$OUTPUT_FOLDER_PATH"
-tar -xf "${INPUT_PATH}.tar" -C "$OUTPUT_FOLDER_PATH"
+tar -xf "${INPUT_PATH}.tar" -C "$OUTPUT_PARENT_FOLDER"
 rm "${INPUT_PATH}.tar"
 
 echo "Decryption and verification completed successfully."
