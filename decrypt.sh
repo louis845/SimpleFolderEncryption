@@ -48,15 +48,8 @@ if [ ! -f "${INPUT_PATH}.tar.gpg" ] || [ ! -f "${INPUT_PATH}.tar.sha256sum" ]; t
     exit 1
 fi
 
-if [ -d "$OUTPUT_FOLDER_PATH" ]; then
-    echo "Error: Output folder already exists."
-    exit 1
-fi
-
-# Get parent folder of output folder path, and validate it exists
-OUTPUT_PARENT_FOLDER=$(dirname "$OUTPUT_FOLDER_PATH")
-if [ ! -d "$OUTPUT_PARENT_FOLDER" ]; then
-    echo "Error: Output parent folder does not exist."
+if [ ! -d "$OUTPUT_FOLDER_PATH" ]; then
+    echo "Error: Output folder path does not exist."
     exit 1
 fi
 
@@ -76,7 +69,7 @@ if [[ "$CHECKSUM" != "$CALCULATED_CHECKSUM" ]]; then
     exit 2
 fi
 
-tar -xf "${INPUT_PATH}.tar" -C "$OUTPUT_PARENT_FOLDER"
+tar -xf "${INPUT_PATH}.tar" -C "$OUTPUT_FOLDER_PATH"
 rm "${INPUT_PATH}.tar"
 
 echo "Decryption and verification completed successfully."
