@@ -66,6 +66,7 @@ CHECKSUM=$(cat "${INPUT_PATH}.tar.sha256sum")
 CALCULATED_CHECKSUM=$(echo "$PASSWORD" | (cat "${INPUT_PATH}.tar" -) | sha256sum)
 if [[ "$CHECKSUM" != "$CALCULATED_CHECKSUM" ]]; then
     echo "Integrity check failed!"
+    rm "${INPUT_PATH}.tar"
     exit 2
 fi
 
