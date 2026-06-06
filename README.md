@@ -71,7 +71,7 @@ and reads from the file descriptor. Alternatively, if not provided, the script w
   **Required.** Path to the input folder you want to encrypt.
 
 - `--output_path=<path>`  
-  **Required.** Base path where the encrypted file and checksum will be saved. The script appends `.tar.gpg` and `.tar.sha256sum` to this path.
+  **Required.** Base path where the encrypted file and checksum will be saved. The script appends `.tar.gpg` to this path.
 
 - `--password=<fd>`  
   **Optional.** File descriptor for reading the password. If not provided, the script will prompt you to enter a password interactively.
@@ -113,7 +113,7 @@ and reads from the file descriptor. Alternatively, if not provided, the script w
 #### Arguments
 
 - `--input_path=<path>`  
-  **Required.** Base path to the encrypted `.tar.gpg` file. The script also expects a corresponding `.tar.sha256sum` file in the same directory.
+  **Required.** Base path to the encrypted `.tar.gpg` file.
 
 - `--output_folder_path=<path>`  
   **Required.** Path where the decrypted files will be extracted. The directory must already exist.
@@ -167,7 +167,6 @@ Encryption and signing completed successfully.
 **Generated Files:**
 
 - `/home/user/MyFolderEncrypted.tar.gpg`
-- `/home/user/MyFolderEncrypted.tar.sha256sum`
 
 ### Decrypting a Folder Interactively
 
