@@ -1,11 +1,12 @@
 #!/bin/bash
 
-set -e  # Exit immediately if a command exits with a non-zero status.
+set -e          # Exit immediately if a command exits with a non-zero status.
+set -o pipefail # Ensure pipeline failures are caught (e.g., if tar fails, gpg won't silently create a bad file).
 
 function show_help {
     echo "Usage: $0 --input_folder_path=<path> --output_path=<path> [--password=<fd>]"
     echo "  --input_folder_path=<path>  Path to the input folder to be encrypted."
-    echo "  --output_path=<path>        Path where the encrypted file will be saved."
+    echo "  --output_path=<path>        Base path where the encrypted file will be saved (will append .tar.gpg)."
     echo "  --password=<fd>             Optional file descriptor for reading the password."
 }
 
@@ -20,26 +21,26 @@ INPUT_FOLDER_PATH=""
 OUTPUT_PATH=""
 PASSWORD_FD=""
 
-for i in "$@"
-do
-case $i in
-    --input_folder_path=*)
-    INPUT_FOLDER_PATH="${i#*=}"
-    shift
-    ;;
-    --output_path=*)
-    OUTPUT_PATH="${i#*=}"
-    shift
-    ;;
-    --password=*)
-    PASSWORD_FD="${i#*=}"
-    shift
-    ;;
-    *)
-    show_help
-    exit 1
-    ;;
-esac
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --input_folder_path=*)
+        INPUT_FOLDER_PATH="${1#*=}"
+        shift
+        ;;
+        --output_path=*)
+        OUTPUT_PATH="${1#*=}"
+        shift
+        ;;
+        --password=*)
+        PASSWORD_FD="${1#*=}"
+        shift
+        ;;
+        *)
+        echo "Unknown parameter passed: $1"
+        show_help
+        exit 1
+        ;;
+    esac
 done
 
 # Validate input arguments
@@ -48,23 +49,23 @@ if [ ! -d "$INPUT_FOLDER_PATH" ]; then
     exit 1
 fi
 
-if [ -f "${OUTPUT_PATH}.tar.gpg" ] || [ -f "${OUTPUT_PATH}.tar" ] || [ -f "${OUTPUT_PATH}.tar.sha256sum" ]; then
-    echo "Error: One or more output files already exist."
+if [ -f "${OUTPUT_PATH}.tar.gpg" ]; then
+    echo "Error: Output file ${OUTPUT_PATH}.tar.gpg already exists."
     exit 1
 fi
 
 # Read the password
 if [ -z "$PASSWORD_FD" ]; then
-    echo "Please enter the password: "
-    read -s PASSWORD
+    read -rs -p "Please enter the password: " PASSWORD
+    echo "" # Add a newline after silent input
 else
-    read -u "$PASSWORD_FD" PASSWORD
+    read -ru "$PASSWORD_FD" PASSWORD
 fi
 
-# Encrypt and hash the folder
-tar -cf "${OUTPUT_PATH}.tar" -C "$(dirname "$INPUT_FOLDER_PATH")" "$(basename "$INPUT_FOLDER_PATH")"
-echo "$PASSWORD" | gpg --batch --yes --passphrase-fd 0 --symmetric --cipher-algo AES256 -o "${OUTPUT_PATH}.tar.gpg" "${OUTPUT_PATH}.tar"
-echo "$PASSWORD" | (cat "${OUTPUT_PATH}.tar" -) | sha256sum > "${OUTPUT_PATH}.tar.sha256sum"
-rm "${OUTPUT_PATH}.tar"
+# Encrypt the folder securely using pipes
+# tar writes to standard output (-), and gpg encrypts that stream directly to the output file.
+# We use File Descriptor 3 (3<<<"$PASSWORD") to pass the password to GPG securely.
+tar -cf - -C "$(dirname "$INPUT_FOLDER_PATH")" "$(basename "$INPUT_FOLDER_PATH")" | \
+    gpg --batch --yes --passphrase-fd 3 --symmetric --cipher-algo AES256 -o "${OUTPUT_PATH}.tar.gpg" 3<<<"$PASSWORD"
 
-echo "Encryption and signing completed successfully."
+echo "Encryption completed successfully. Integrity checks are embedded in the GPG file."
